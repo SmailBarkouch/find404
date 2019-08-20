@@ -1,16 +1,20 @@
 import java.io._
 import scala.io.Source._
 import scala.io.StdIn._
+import scala.collection.mutable.ArrayBuffer
 
-object Find404 {
-    
-    def main(args: Array[String]): Unit = {
-        println("Provide a directory")
-        val directory = new File(readLine())
+val fileSet = ArrayBuffer[File]()
 
-        val directorySet = directory.listFiles()
-        val fileSet = directorySet.filter(_.getClass().getName().indexOfSlice(".") == -1)
+try {
+    val directorySet = new File(args(0))
+    exploreDirect(directorySet, fileSet)
+} catch {
+    case _: NullPointerException => println("Not a valid directory")
+}
 
-        fileSet.foreach(println(_))
+def exploreDirect(directory: File, fileSet: ArrayBuffer[File]): Unit = {
+    directory.listFiles().foreach {
+        System.out.println(directory.getAbsolutePath())
+        x: File => if(x.isFile) fileSet += x else exploreDirect(x, fileSet)
     }
 }
