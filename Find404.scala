@@ -1,46 +1,33 @@
 import java.io._
-import scala.io.Source._
-import scala.io.StdIn._
+import java.nio.file.Files
 import scala.collection.mutable.ArrayBuffer
+import sys.process._
+import java.nio.charset.StandardCharsets
+import scala.collection.JavaConverters._
+
 object Find404 {
     def main(args: Array[String]): Unit = {
-        val ignoreSet = ArrayBuffer[String]()
-        if(args.length < 1) {
-            println("To use this commandline application, enter a directory following")
-            println("the command to start the application.")
-            println("This application takes in a directory and checks for deadlinks")
-            println("within files, excluding the files found in .gitignore.")
-        } else if(new File(args(0)).exists() == false) {
-            println(s"The entered directory of ${args(0)} does not exist!")
-        } else {
-            val directorySet = new File(args(0))
-            val fileSet = exploreDirect(directorySet)
-        }
-    }
-    
-    def exploreDirect(directory: File): ArrayBuffer[File] = {
-        var subFileSet = ArrayBuffer[File]()
-        directory.listFiles().foreach {
-            x: File => 
-            if(x.isFile()) {
-                println(x.getAbsolutePath())
-                subFileSet += x
+        getFileNames
+            .foreach {
+                x =>
+                println(new String(readFile(new File(x.getAbsolutePath()))))
             }
-            else subFileSet ++= exploreDirect(x)
-        }
-        subFileSet
     }
     
-    def searchFor(fileSet: ArrayBuffer[File], name: String): File = {
-        var foundFile = new File("/")
-        fileSet.foreach {
+    def getFileNames: ArrayBuffer[File] = {
+        var fileSet = ArrayBuffer[File]()
+        ("git ls-files --full-name" !!).split("\\r?\\n").foreach {
             x =>
-            if (x.getAbsolutePath.indexOf(name) != -1) {
-                foundFile = x
-            }
+            fileSet += new File(x)
         }
-        foundFile
+        println(fileSet.length)
+        fileSet
     }
+
+    def readFile(fileName: File): Array[Byte] = {
+        val fullText = Files.readAllBytes(fileName.toPath())
+        fullText
+        }
 }
 
 
