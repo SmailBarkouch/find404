@@ -13,7 +13,8 @@ object App {
       .map(new File(_))
       .map(readFile)
       .flatMap(getURLS)
-      .map(x => (x, getStatusCode(x))) // mention
+      .map(x => (x, getStatusCode(x)))
+      .filter(x => (x._2 / 100) != 2)
       .foreach(println(_))
   }
 
