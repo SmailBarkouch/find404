@@ -1,3 +1,5 @@
+package find404
+
 import java.io._
 import scala.io._
 import java.nio.file.Files
@@ -9,14 +11,14 @@ import java.net.URI
 import scala.util.matching.Regex
 import java.net.HttpURLConnection
 
-object Find404 {
+object App {
   def main(args: Array[String]): Unit = {
     val a = getFileNames
       .map(new File(_))
       .map(readFile(_))
       .map(getURLS(_))
       .flatten
-      .map(x =>(x, getStatusCode(x)))
+      .map(x =>(x, getStatusCode(x))) // mention
       .foreach(println(_))
   }
 
