@@ -11,17 +11,17 @@ object App {
   def main(args: Array[String]): Unit = {
     getFileNames
       .map(new File(_))
+      // .filter(!_.isDirectory) test this
       .map(readFile)
       .flatMap(getURLS)
       .map(x => (x, getStatusCode(x)))
-      .filter(x => (x._2 / 100) != 2)
       .foreach(println(_))
   }
 
   def getFileNames: Array[String] = "git ls-files --full-name".!!.split("\n")
 
   def readFile(fileName: File): String = {
-    println(fileName.getAbsolutePath)
+    println(fileName)
     val source = Source.fromFile(fileName)
     val lines = {
       try {
@@ -38,13 +38,14 @@ object App {
   }
 
   def getURLS(text: String): List[URI] = {
-    "(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".r
+    "[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".r
       .findAllIn(text)
       .map(new URI(_))
       .toList
   }
 
   def getStatusCode(url: URI): Integer = {
+    println(url)
     val http = url.toURL.openConnection()
     http.asInstanceOf[HttpURLConnection].getResponseCode()
   }

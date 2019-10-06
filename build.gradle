@@ -34,3 +34,9 @@ application {
     mainClassName = 'find404.App'
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'find404.App'
+    }
+}
+
