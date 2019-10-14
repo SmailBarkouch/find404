@@ -10,17 +10,24 @@ import scala.collection.mutable.ArrayBuffer
 
 object App {
   def main(args: Array[String]): Unit = {
-    val fullDataSet =
-      getFileNames
-      .map(new File(_))
-      .map(x => DataSet(x, (getURLS(readFile(x)), getURLS(readFile(x)).map(getStatusCode)))) // search for more efficent manner
+    try {
+      val reliableServer = new URI("http://google.com").toURL.openConnection()
+      val internetCheck = reliableServer.asInstanceOf[HttpURLConnection].getResponseCode()
 
-    Try {
+      val fullDataSet =
+        getFileNames
+        .map(new File(_))
+        .filter(!_.isDirectory)
+        .map(x => DataSet(x, (getURLS(readFile(x)), getURLS(readFile(x)).map(getStatusCode)))) // search for more efficent manner
+
       args(0) match {
         case "verbose" => printVerbose(fullDataSet)
       }
+    } catch {
+      case noArguments: java.lang.ArrayIndexOutOfBoundsException =>
+      case noConnection: java.net.UnknownHostException => println("Your internet connection is off, please connect to a network")
+      case notGit: java.lang.RuntimeException => println("This is not a git respitory.")
     }
-
   }
 
   def getFileNames: Array[String] = "git ls-files --full-name".!!.split("\n")
@@ -49,8 +56,13 @@ object App {
   }
 
   def getStatusCode(url: URI): Integer = {
-    val http = url.toURL.openConnection()
-    http.asInstanceOf[HttpURLConnection].getResponseCode()
+
+      val http = url.toURL.openConnection()
+    try {
+      http.asInstanceOf[HttpURLConnection].getResponseCode()
+    } catch {
+      case NonFatal(_) => 401
+    }
   }
 
   def printVerbose(fileChain: Array[DataSet]): Unit = {
