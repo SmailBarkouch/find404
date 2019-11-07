@@ -15,5 +15,3 @@ Over time static projects tend to accumulate broken links. Given a folder, `find
 + [ ] Test this on parthmehrotra.com
 + [ ] Setup CI/CD
 + [ ] Deploy to package managers
-
-http://adjsdjasdjs.com

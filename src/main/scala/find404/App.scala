@@ -2,35 +2,68 @@ package find404
 
 import java.io._
 import java.net.{HttpURLConnection, URI}
-import scala.util.Try
+
 import scala.io._
 import scala.sys.process._
 import scala.util.control.NonFatal
-import scala.collection.mutable.ArrayBuffer
+
+case class DataSet(file: File, urlSet: (List[URI], List[Integer]))
 
 object App {
   def main(args: Array[String]): Unit = {
-    try {
-      val reliableServer = new URI("http://google.com").toURL.openConnection()
-      val internetCheck = reliableServer.asInstanceOf[HttpURLConnection].getResponseCode()
 
-      val fullDataSet =
-        getFileNames
-        .map(new File(_))
-        .filter(!_.isDirectory)
-        .map(x => DataSet(x, (getURLS(readFile(x)), getURLS(readFile(x)).map(getStatusCode)))) // search for more efficent manner
+    if (checkInternet) {
+      val invalidURLS = get404
+      evaluateArgs(args.lift(0), invalidURLS)
+    }
 
-      args(0) match {
-        case "verbose" => printVerbose(fullDataSet)
-      }
-    } catch {
-      case noArguments: java.lang.ArrayIndexOutOfBoundsException =>
-      case noConnection: java.net.UnknownHostException => println("Your internet connection is off, please connect to a network")
-      case notGit: java.lang.RuntimeException => println("This is not a git respitory.")
+  }
+
+  def evaluateArgs(arg0: Option[String], dataSet: Array[DataSet]): Unit = {
+
+    arg0 match {
+      case Some("verbose") => printVerbose(dataSet)
+      case None =>
+        println(
+          "Use the argument \"verbose\" to have commandline output. This is the only current command."
+        )
     }
   }
 
+  def checkInternet: Boolean = {
+    val internet = try { // Move to function
+      val reliableServer = new URI("http://google.com").toURL.openConnection()
+      val internetCheck =
+        reliableServer.asInstanceOf[HttpURLConnection].getResponseCode()
+      true
+    } catch {
+      case noConnection: java.net.UnknownHostException => {
+        println("Your internet connection is off, please connect to a network")
+        false
+      }
+    }
+    internet
+  }
+
   def getFileNames: Array[String] = "git ls-files --full-name".!!.split("\n")
+
+  def get404: Array[DataSet] = {
+    val fullDataSet =
+      getFileNames
+        .map(new File(_))
+        .filter(!_.isDirectory)
+        .map(
+          x =>
+            DataSet(
+              x,
+              (
+                getURLS(readFile(x)),
+                getURLS(readFile(x)).map(getStatusCode)
+              )
+            )
+        )
+    fullDataSet
+  }
 
   def readFile(fileName: File): String = {
     val source = Source.fromFile(fileName)
@@ -56,8 +89,7 @@ object App {
   }
 
   def getStatusCode(url: URI): Integer = {
-
-      val http = url.toURL.openConnection()
+    val http = url.toURL.openConnection()
     try {
       http.asInstanceOf[HttpURLConnection].getResponseCode()
     } catch {
@@ -65,19 +97,15 @@ object App {
     }
   }
 
-  def printVerbose(fileChain: Array[DataSet]): Unit = {
-    fileChain.foreach {
-      x =>
-        println("File Found: " + x.file)
-        if(x.urlSet._1.size != 0) {
-          for (z <- 0 until x.urlSet._2.size) {
-            if (x.urlSet._2(z) == 401) println("URL Failure: " + x.urlSet)
-            else println("URL Success: " + x.urlSet)
-          }
+  def printVerbose(fileChain: Array[DataSet]): Unit = { // Needs to be simplfied, use hashmap
+    fileChain.foreach { x =>
+      println("File Found: " + x.file)
+      if (x.urlSet._1.size != 0) {
+        for (z <- 0 until x.urlSet._2.size) {
+          if (x.urlSet._2(z) == 401) println("URL Failure: " + x.urlSet)
+          else println("URL Success: " + x.urlSet)
         }
+      }
     }
   }
-
 }
-
-case class DataSet(file: File, urlSet: (List[URI], List[Integer]))
